@@ -65,12 +65,71 @@ public class App {
         System.out.println("LEFT OUTER JOIN (Optional): " + leftOuterJoinOptional);
         // [Optional[1], Optional[2], Optional.empty, Optional.empty]
 
-        Observable.range(1, 5)
-            .map(numero -> numero * 10)
-            .subscribe(
-                resultado -> System.out.println("Resultado: " + resultado),
-                error -> System.err.println("Error: " + error),
-                () -> System.out.println("Completado")
-            );
+        /*
+         * Observable.range(1, 5)
+         * .map(numero -> numero * 10)
+         * .subscribe(
+         * resultado -> System.out.println("Resultado: " + resultado),
+         * error -> System.err.println("Error: " + error),
+         * () -> System.out.println("Completado")
+         * );
+         */
+
+        Observable.just(1, 2, 0, 4)
+                .concatMap(divisor -> Observable.just(divisor)
+                        .map(d -> 10 / d)
+                        .onErrorResumeNext(error -> {
+                            System.err.println("Error con divisor " + divisor + ": " + error.getMessage());
+                            return Observable.empty(); // Continúa sin emitir valor
+                        }))
+                .subscribe(
+                        resultado -> System.out.println("Resultado: " + resultado),
+                        error -> System.err.println("Error general: " + error),
+                        () -> System.out.println("Completado"));
+
+        Observable.just(1, 2, 0, 4)
+                .map(divisor -> {
+                    try {
+                        return Optional.of(10 / divisor);
+                    } catch (Exception e) {
+                        System.err.println("Error con divisor " + divisor);
+                        return Optional.<Integer>empty();
+                    }
+                })
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .subscribe(
+                        resultado -> System.out.println("Resultado: " + resultado),
+                        error -> System.err.println("Error: " + error),
+                        () -> System.out.println("Completado"));
+
+        Observable.just(1, 2, 0, 4)
+                .mapOptional(divisor -> {
+                    try {
+                        return Optional.of(10 / divisor);
+                    } catch (Exception e) {
+                        System.err.println("Error con divisor " + divisor);
+                        return Optional.empty();
+                    }
+                })
+                .subscribe(
+                        resultado -> System.out.println("Resultado: " + resultado),
+                        error -> System.err.println("Error: " + error),
+                        () -> System.out.println("Completado"));
+
+        Observable.just(1, 2, 0, 4)
+                .map(divisor -> {
+                    try {
+                        return 10 / divisor;
+                    } catch (Exception e) {
+                        System.err.println("Error con divisor " + divisor);
+                        return null;
+                    }
+                })
+                .filter(resultado -> resultado != null)
+                .subscribe(
+                        resultado -> System.out.println("Resultado: " + resultado),
+                        error -> System.err.println("Error: " + error),
+                        () -> System.out.println("Completado"));
     }
 }
