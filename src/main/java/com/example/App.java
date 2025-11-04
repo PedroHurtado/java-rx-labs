@@ -131,5 +131,15 @@ public class App {
                         resultado -> System.out.println("Resultado: " + resultado),
                         error -> System.err.println("Error: " + error),
                         () -> System.out.println("Completado"));
+
+        Observable<Integer> left = Observable.just(1, 2, 3, 4);
+        Observable<Integer> right = Observable.just(1, 2);
+
+        // LEFT OUTER JOIN
+        right.publish(rightShared -> left.flatMap(leftValue -> rightShared
+                .filter(rightValue -> rightValue.equals(leftValue))
+                .map(rightValue -> "Left: " + leftValue + " | Right: " + rightValue)
+                .defaultIfEmpty("Left: " + leftValue + " | Right: NULL")))
+                .subscribe(System.out::println);
     }
 }
