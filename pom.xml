@@ -26,6 +26,11 @@
       <version>3.1.8</version>
     </dependency>
     <dependency>
+      <groupId>com.github.akarnokd</groupId>
+      <artifactId>rxjava3-extensions</artifactId>
+      <version>3.1.1</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
