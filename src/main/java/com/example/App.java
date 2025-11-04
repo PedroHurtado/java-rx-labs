@@ -133,13 +133,26 @@ public class App {
                         () -> System.out.println("Completado"));
 
         Observable<Integer> left = Observable.just(1, 2, 3, 4);
-        Observable<Integer> right = Observable.just(1, 2);
+        Observable<Integer> right = Observable.just(1, 3);
 
-        // LEFT OUTER JOIN
+        System.out.println("LEFT OUTER JOIN"); 
         right.publish(rightShared -> left.flatMap(leftValue -> rightShared
                 .filter(rightValue -> rightValue.equals(leftValue))
                 .map(rightValue -> "Left: " + leftValue + " | Right: " + rightValue)
                 .defaultIfEmpty("Left: " + leftValue + " | Right: NULL")))
                 .subscribe(System.out::println);
+
+        //
+
+        System.out.println("NO ES INNJER JOIN"); 
+        Observable.zip(left, right, (l, r) -> "Left: " + l + " | Right: " + r)
+                .subscribe(System.out::println);
+
+        Observable<Integer> rightCached = right.replay().autoConnect();
+        
+        System.out.println("ES INNJER JOIN"); 
+        left.flatMap(leftValue -> rightCached
+                .filter(rightValue -> rightValue.equals(leftValue))
+                .map(rightValue -> "Left: " + leftValue + " | Right: " + rightValue)).subscribe(System.out::println);
     }
 }
