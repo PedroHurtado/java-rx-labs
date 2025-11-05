@@ -35,7 +35,8 @@ public class FakePizzaRepository {
                               ing.getName().equals("Queso Mozzarella") || 
                               ing.getName().equals("Albahaca"))
                 .doOnNext(margarita::addIngredient)
-                .blockLast();
+                .then()
+                .block();
         
         pizzas.put(margarita.getId(), margarita);
 
@@ -52,7 +53,8 @@ public class FakePizzaRepository {
                               ing.getName().equals("Queso Mozzarella") || 
                               ing.getName().equals("Pepperoni"))
                 .doOnNext(pepperoni::addIngredient)
-                .blockLast();
+                .then()
+                .block();
         
         pizzas.put(pepperoni.getId(), pepperoni);
 
@@ -70,7 +72,8 @@ public class FakePizzaRepository {
                               ing.getName().equals("Jamón") ||
                               ing.getName().equals("Piña"))
                 .doOnNext(hawaiana::addIngredient)
-                .blockLast();
+                .then()
+                .block();
         
         pizzas.put(hawaiana.getId(), hawaiana);
 
@@ -89,7 +92,8 @@ public class FakePizzaRepository {
                               ing.getName().equals("Aceitunas") ||
                               ing.getName().equals("Jamón"))
                 .doOnNext(cuatroEstaciones::addIngredient)
-                .blockLast();
+                .then()
+                .block();
         
         pizzas.put(cuatroEstaciones.getId(), cuatroEstaciones);
     }
