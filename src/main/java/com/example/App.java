@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
 /**
  * Hello world!
@@ -135,7 +136,7 @@ public class App {
         Observable<Integer> left = Observable.just(1, 2, 3, 4);
         Observable<Integer> right = Observable.just(1, 3);
 
-        System.out.println("LEFT OUTER JOIN"); 
+        System.out.println("LEFT OUTER JOIN");
         right.publish(rightShared -> left.flatMap(leftValue -> rightShared
                 .filter(rightValue -> rightValue.equals(leftValue))
                 .map(rightValue -> "Left: " + leftValue + " | Right: " + rightValue)
@@ -144,15 +145,24 @@ public class App {
 
         //
 
-        System.out.println("NO ES INNJER JOIN"); 
-        Observable.zip(left, right, (l, r) -> "Left: " + l + " | Right: " + r)
-                .subscribe(System.out::println);
+        System.out.println("NO ES INNJER JOIN");
+        Observable.zip(left, right, (l, r) -> {
+            return "Left: " + l + " | Right: " + r;
+        })
+        .subscribe(System.out::println);
 
         Observable<Integer> rightCached = right.replay().autoConnect();
-        
-        System.out.println("ES INNJER JOIN"); 
+
+        System.out.println("ES INNJER JOIN");
         left.flatMap(leftValue -> rightCached
                 .filter(rightValue -> rightValue.equals(leftValue))
                 .map(rightValue -> "Left: " + leftValue + " | Right: " + rightValue)).subscribe(System.out::println);
+
+        Observable.just(1, 2, 3)
+                .subscribeOn(Schedulers.io())
+                .doOnNext(i -> System.out.println("Emit: " + Thread.currentThread().getName()))
+                .observeOn(Schedulers.computation())
+                .doOnNext(i -> System.out.println("Process: " + Thread.currentThread().getName()))
+                .subscribe(i -> System.out.println("Subscribe: " + Thread.currentThread().getName()));
     }
 }
