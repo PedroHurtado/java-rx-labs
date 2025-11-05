@@ -1,16 +1,22 @@
-package features.pizzas.controllers;
+package com.example.demo.features.pizzas.controllers;
 
-import features.pizzas.dto.PizzaResponse;
-import features.pizzas.models.Pizza;
-import features.pizzas.repositories.FakeIngredientRepository;
-import features.pizzas.repositories.FakePizzaRepository;
+
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import com.example.demo.features.pizzas.dtos.PizzaResponse;
+import com.example.demo.features.pizzas.models.Ingredient;
+import com.example.demo.features.pizzas.models.Pizza;
+import com.example.demo.features.pizzas.respositories.FakeIngredientRepository;
+import com.example.demo.features.pizzas.respositories.FakePizzaRepository;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -25,7 +31,7 @@ public class PizzaController {
         this.ingredientRepository = ingredientRepository;
     }
 
-    @PostMapping
+    /*@PostMapping
     public Mono<ResponseEntity<PizzaResponse>> createPizza(@RequestBody Mono<PizzaCreateRequest> request) {
         return request
                 .flatMap(req -> {
@@ -49,6 +55,63 @@ public class PizzaController {
                 .map(pizza -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(PizzaResponse.fromEntity(pizza)));
+
+            
+    }*/
+
+    @PostMapping
+    public Mono<ResponseEntity<?>> createPizza(@RequestBody Mono<PizzaCreateRequest> request) {
+        return request.flatMap(req -> {
+            Pizza pizza = Pizza.create(
+                    UUID.randomUUID(),
+                    req.name(),
+                    req.description(),
+                    req.url()
+            );
+
+            if (req.ingredientIds() == null || req.ingredientIds().isEmpty()) {
+                return Mono.just(pizza);
+            }
+
+            List<UUID> ids = req.ingredientIds();
+
+            return ingredientRepository.findAllById(ids)
+                    .collectList()
+                    .flatMap(foundIngredients -> {
+                        List<UUID> foundIds = foundIngredients.stream()
+                                .map(Ingredient::getId)
+                                .toList();
+
+                        List<UUID> missingIds = ids.stream()
+                                .filter(id -> !foundIds.contains(id))
+                                .toList();
+
+                        if (!missingIds.isEmpty()) {
+                            return Mono.error(new RuntimeException(
+                                    "Ingredientes no encontrados: " + missingIds
+                            ));
+                        }
+
+                        foundIngredients.forEach(pizza::addIngredient);
+                        return Mono.just(pizza);
+                    });
+        })
+        .flatMap(pizzaRepository::save)
+        // 👇 Aquí forzamos el tipo de salida a ResponseEntity<?>
+        .<ResponseEntity<?>>map(pizza -> ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(PizzaResponse.fromEntity(pizza)))
+        .onErrorResume(RuntimeException.class, e -> {
+            if (e.getMessage() != null && e.getMessage().startsWith("Ingredientes no encontrados")) {
+                return Mono.just(ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage())));
+            }
+
+            return Mono.just(ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Error interno del servidor")));
+        });
     }
 
     @PutMapping("/{id}")
@@ -125,4 +188,5 @@ public class PizzaController {
             String url,
             List<UUID> ingredientIds
     ) {}
+}
 }
